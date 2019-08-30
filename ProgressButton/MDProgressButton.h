@@ -11,10 +11,8 @@
 
 @class MDProgressButton;
 @protocol MDProgressButtonDelegate <NSObject>
-
 @optional;
 -(void)complete:(MDProgressButton *)btn;
-
 @end
 
 
@@ -22,7 +20,7 @@
 
 @property (nonatomic, assign) CGFloat   duration;
 
-@property (nonatomic, assign) CGFloat   progress;
+@property (nonatomic, assign) float   progress;
 
 @property (nonatomic, assign) CGFloat   lineWidth;
 
@@ -31,6 +29,8 @@
 @property (nonatomic, strong) UIColor   *strokeColor;
 
 @property (nonatomic, weak) id<MDProgressButtonDelegate> delegate;
+
+-(void)stopTimer;
 
 @end
  

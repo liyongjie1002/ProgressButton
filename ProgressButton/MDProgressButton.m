@@ -12,8 +12,8 @@
 
 @property (nonatomic, strong) CAShapeLayer *fillLayer;
 @property (nonatomic, strong) CAShapeLayer *progressLayer;
-@property (nonatomic, assign) CGFloat      currentTime;
-@property (nonatomic, strong) NSTimer      *timer;
+@property (nonatomic, assign) float currentTime;
+@property (nonatomic, strong) dispatch_source_t timer;
 
 @end
 
@@ -31,46 +31,47 @@
     }
     return self;
 }
+
 - (void)startTimer {
-    
-    NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:0.01 target:self selector:@selector(handleTime) userInfo:nil repeats:YES];
-    self.timer = timer;
-    [[NSRunLoop currentRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
+    if (self.timer) {
+        return;
+    }
+    _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+    dispatch_source_set_timer(_timer, DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC, 0 * NSEC_PER_SEC);
+    dispatch_source_set_event_handler(_timer, ^{
+        [self handleTime];
+    });
+    dispatch_resume(_timer);
 }
 
--(void)handleTime {
-    
-    self.currentTime += 0.01;
-}
+- (void)handleTime {
 
--(void)stopTimer {
-    
-    self.currentTime = 0;
-    [self.timer invalidate];
-    self.timer = nil;
-}
+    self.currentTime += 0.1;
+    float progress = self.currentTime / self.duration;
+    self.progress  = progress;
 
--(void)setCurrentTime:(CGFloat)currentTime {
-    _currentTime = currentTime;
-    
-    if (currentTime >= self.duration) {
+    if (self.currentTime > self.duration) {
         if (self.delegate && [self.delegate respondsToSelector:@selector(complete:)]) {
             [self.delegate complete:self];
         }
-        [self.timer invalidate];
         self.timer = nil;
-        return;
     }
-    
-    CGFloat progress = currentTime / self.duration;
-    self.progress = progress;
 }
 
-- (void)setProgress:(CGFloat)progress {
+- (void)stopTimer {
+
+    self.currentTime = 0;
+    float progress   = self.currentTime / self.duration;
+    self.progress    = progress;
+    self.timer       = nil;
+}
+
+- (void)setProgress:(float)progress {
+
     _progress = progress;
 
     if (progress == 0) {
-        self.progressLayer.hidden = YES;
+        self.progressLayer.hidden    = YES;
         self.progressLayer.strokeEnd = 0;
     } else {
         self.progressLayer.hidden    = NO;
@@ -91,6 +92,7 @@
     _lineWidth   = 5;
     _strokeColor = [UIColor redColor];
     _fillColor   = [UIColor yellowColor];
+    _currentTime = 0;
 }
 
 - (CAShapeLayer *)fillLayer {
@@ -125,7 +127,7 @@
         _progressLayer.lineJoin    = kCALineJoinBevel;
         _progressLayer.hidden      = YES;
         UIBezierPath *progressPath = [UIBezierPath bezierPathWithArcCenter:CGPointMake(width / 2, height / 2)
-                                                                    radius:radius+self.lineWidth/2.0
+                                                                    radius:radius + self.lineWidth / 2.0
                                                                 startAngle:-M_PI_2
                                                                   endAngle:2 * M_PI - M_PI_2
                                                                  clockwise:YES];

@@ -27,6 +27,8 @@
 
 -(void)complete:(MDProgressButton *)btn {
     NSLog(@"完成回调，弹窗啊什么的");
+    UIAlertView *alert = [[UIAlertView alloc]initWithTitle:@"结束" message:@"本次运动结束" delegate:nil cancelButtonTitle:@"取消" otherButtonTitles:nil, nil];
+    [alert show];
 }
 
 -(MDProgressButton *)circleButton {
